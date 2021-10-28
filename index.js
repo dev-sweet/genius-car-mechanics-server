@@ -5,7 +5,7 @@ const ObjectId = require("mongodb").ObjectId;
 const { json } = require("express");
 require("dotenv").config();
 const app = express();
-const PORT = 5000;
+const port = process.env.PORT || 5000;
 
 // middle ware
 app.use(cors());
@@ -21,12 +21,14 @@ async function run() {
     client.connect();
     const database = client.db("carMechanic");
     const servicesCollection = database.collection("services");
+
     // GET Method
     app.get("/services", async (req, res) => {
       const cursor = servicesCollection.find({});
       const services = await cursor.toArray();
       res.send(services);
     });
+
     // GET Every Single Service
     app.get("/services/:id", async (req, res) => {
       const id = req.params.id;
@@ -35,6 +37,7 @@ async function run() {
 
       res.send(service);
     });
+
     // POST Method
     app.post("/services", async (req, res) => {
       const service = req.body;
@@ -50,6 +53,28 @@ async function run() {
       const result = await servicesCollection.deleteOne(query);
       res.json(result);
     });
+
+    // PUT / Update Method
+    app.put("/services/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedUser = req.body;
+      const query = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const UpdateDoc = {
+        $set: {
+          name: updatedUser.name,
+          description: updatedUser.description,
+          price: updatedUser.price,
+          img: updatedUser.img,
+        },
+      };
+      const result = await servicesCollection.updateOne(
+        query,
+        UpdateDoc,
+        options
+      );
+      res.json(result);
+    });
   } finally {
     // await client.close();
   }
@@ -60,6 +85,6 @@ app.get("/", (req, res) => {
   res.send("Running Genius Server");
 });
 
-app.listen(PORT, () => {
-  console.log("Running Genius Server on PORT : ", PORT);
+app.listen(port, () => {
+  console.log("Running Genius Server on PORT : ", port);
 });
